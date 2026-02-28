@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>AT™ Script Hub</title>
+<style>
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+margin:0;
+}
+
+header{
+background:#020617;
+padding:20px;
+text-align:center;
+font-size:30px;
+}
+
+nav{
+background:#1e293b;
+padding:10px;
+text-align:center;
+}
+
+button{
+padding:10px 20px;
+margin:10px;
+border:none;
+background:#22c55e;
+color:white;
+cursor:pointer;
+}
+
+.container{
+padding:20px;
+}
+
+.card{
+background:#1e293b;
+padding:15px;
+margin:10px 0;
+border-radius:10px;
+}
+
+textarea{
+width:100%;
+height:150px;
+}
+
+input{
+width:100%;
+padding:10px;
+margin:5px 0;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+AT™ GAME & SCRIPT HUB
+</header>
+
+<nav>
+<button onclick="showHome()">Home</button>
+<button onclick="showUpload()">Upload Script</button>
+</nav>
+
+<div class="container" id="home">
+
+<div class="card">
+<h3>Example Script</h3>
+<p>Owner: Admin</p>
+<p>Status: ✔ Safe</p>
+
+<button onclick="like()">👍 Like</button>
+<button onclick="dislike()">👎 Dislike</button>
+
+<br><br>
+
+<input placeholder="Write comment">
+<button>Send</button>
+
+</div>
+
+</div>
+
+<div class="container" id="upload" style="display:none;">
+
+<h2>Upload Script / Game</h2>
+
+<input placeholder="Game Name">
+<input placeholder="Owner Name">
+<input placeholder="Script Language">
+
+<textarea placeholder="Paste script here"></textarea>
+
+<button onclick="alert('Script Uploaded!')">Upload</button>
+
+</div>
+
+<script>
+
+function showUpload(){
+document.getElementById("home").style.display="none";
+document.getElementById("upload").style.display="block";
+}
+
+function showHome(){
+document.getElementById("home").style.display="block";
+document.getElementById("upload").style.display="none";
+}
+
+function like(){
+alert("You liked this script")
+}
+
+function dislike(){
+alert("You disliked this script")
+}
+
+</script>
+
+</body>
+</html>
