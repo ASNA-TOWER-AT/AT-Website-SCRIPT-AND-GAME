@@ -97,25 +97,20 @@ margin-top:10px;
 
 <div id="upload" class="page">
 <h2 id="uploadTitle">Upload</h2>
-
 <select id="uploadType">
 <option value="game">Game</option>
 <option value="script">Script</option>
 </select>
-
 <input id="itemName" placeholder="Nama">
 <input id="itemLink" placeholder="Link">
 <textarea id="itemCode" placeholder="Script Code"></textarea>
-
 <button onclick="uploadItem()" id="uploadBtn">Upload</button>
 <button onclick="cancelEdit()" id="cancelEditBtn" style="display:none;">Cancel Edit</button>
-
 </div>
 
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"
-
 import {
 getAuth,
 createUserWithEmailAndPassword,
@@ -123,7 +118,6 @@ signInWithEmailAndPassword,
 signOut,
 onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"
-
 import {
 getFirestore,
 collection,
@@ -137,12 +131,13 @@ increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 const firebaseConfig = {
-apiKey: "YOUR_KEY",
-authDomain: "YOUR_DOMAIN",
-projectId: "YOUR_PROJECT",
-storageBucket: "YOUR_BUCKET",
-messagingSenderId: "YOUR_SENDER",
-appId: "YOUR_APP"
+apiKey: "AIzaSyBZPDqoF3pqPvVXVigbfBlolHAakohx_VY",
+authDomain: "at-data-174bc.firebaseapp.com",
+projectId: "at-data-174bc",
+storageBucket: "at-data-174bc.firebasestorage.app",
+messagingSenderId: "278571146405",
+appId: "1:278571146405:web:bb7fbacf8ec3fb54fec14c",
+measurementId: "G-8PYQB40E2B"
 }
 
 const app = initializeApp(firebaseConfig)
@@ -159,10 +154,8 @@ document.getElementById(page).classList.add("active")
 }
 
 window.register=async function(){
-let email=email.value
-let pass=password.value
 try{
-await createUserWithEmailAndPassword(auth,email,pass)
+await createUserWithEmailAndPassword(auth,email.value,password.value)
 loginMsg.innerText="Register berhasil"
 }catch(e){loginMsg.innerText=e.message}
 }
@@ -188,35 +181,23 @@ let link=itemLink.value
 let code=itemCode.value
 
 if(editingId){
-
-await updateDoc(doc(db,type+"s",editingId),{
-name,
-link,
-code
-})
-
+await updateDoc(doc(db,type+"s",editingId),{name,link,code})
 editingId=null
 editingType=null
 uploadTitle.innerText="Upload"
 uploadBtn.innerText="Upload"
 cancelEditBtn.style.display="none"
-
 }else{
-
 await addDoc(collection(db,type+"s"),{
-name,
-link,
-code,
+name,link,code,
 user:currentUser.email,
 views:0
 })
-
 }
 
 itemName.value=""
 itemLink.value=""
 itemCode.value=""
-
 loadItems()
 }
 
@@ -232,54 +213,41 @@ itemCode.value=""
 }
 
 window.editItem=function(id,type,data){
-
 if(!currentUser || currentUser.email!==data.user){
 alert("Bukan punya kamu")
 return
 }
-
 editingId=id
 editingType=type
-
 uploadType.value=type
 itemName.value=data.name
 itemLink.value=data.link
 itemCode.value=data.code
-
 uploadTitle.innerText="Edit Item"
 uploadBtn.innerText="Save Edit"
 cancelEditBtn.style.display="inline-block"
-
 showPage("upload")
 }
 
 window.playGame=async function(id,link){
-
 if(!currentUser){alert("Login dulu");return}
-
 let viewRef=doc(db,"views",id+"_"+currentUser.uid)
 let snap=await getDoc(viewRef)
-
 if(!snap.exists()){
 await setDoc(viewRef,{itemId:id,userId:currentUser.uid})
 await updateDoc(doc(db,"games",id),{views:increment(1)})
 }
-
 window.open(link,"_blank")
 }
 
 window.copyScript=async function(id,code){
-
 if(!currentUser){alert("Login dulu");return}
-
 let viewRef=doc(db,"views",id+"_"+currentUser.uid)
 let snap=await getDoc(viewRef)
-
 if(!snap.exists()){
 await setDoc(viewRef,{itemId:id,userId:currentUser.uid})
 await updateDoc(doc(db,"scripts",id),{views:increment(1)})
 }
-
 navigator.clipboard.writeText(code)
 alert("Script dicopy")
 }
@@ -293,12 +261,10 @@ gameSnap.forEach(d=>{
 let g=d.data()
 let id=d.id
 if(!g.views){g.views=0}
-
 let editBtn=""
 if(currentUser && currentUser.email===g.user){
 editBtn=`<button onclick='editItem("${id}","game",${JSON.stringify(g)})'>Edit</button>`
 }
-
 let card=document.createElement("div")
 card.className="card"
 card.innerHTML=`
@@ -317,12 +283,10 @@ scriptSnap.forEach(d=>{
 let s=d.data()
 let id=d.id
 if(!s.views){s.views=0}
-
 let editBtn=""
 if(currentUser && currentUser.email===s.user){
 editBtn=`<button onclick='editItem("${id}","script",${JSON.stringify(s)})'>Edit</button>`
 }
-
 let card=document.createElement("div")
 card.className="card"
 card.innerHTML=`
