@@ -96,15 +96,20 @@ margin-top:10px;
 </div>
 
 <div id="upload" class="page">
-<h2>Upload</h2>
+<h2 id="uploadTitle">Upload</h2>
+
 <select id="uploadType">
 <option value="game">Game</option>
 <option value="script">Script</option>
 </select>
+
 <input id="itemName" placeholder="Nama">
 <input id="itemLink" placeholder="Link">
 <textarea id="itemCode" placeholder="Script Code"></textarea>
-<button onclick="uploadItem()">Upload</button>
+
+<button onclick="uploadItem()" id="uploadBtn">Upload</button>
+<button onclick="cancelEdit()" id="cancelEditBtn" style="display:none;">Cancel Edit</button>
+
 </div>
 
 <script type="module">
@@ -132,20 +137,21 @@ increment
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"
 
 const firebaseConfig = {
-apiKey: "AIzaSyBZPDqoF3pqPvVXVigbfBlolHAakohx_VY",
-authDomain: "at-data-174bc.firebaseapp.com",
-projectId: "at-data-174bc",
-storageBucket: "at-data-174bc.firebasestorage.app",
-messagingSenderId: "278571146405",
-appId: "1:278571146405:web:bb7fbacf8ec3fb54fec14c",
-measurementId: "G-8PYQB40E2B"
+apiKey: "YOUR_KEY",
+authDomain: "YOUR_DOMAIN",
+projectId: "YOUR_PROJECT",
+storageBucket: "YOUR_BUCKET",
+messagingSenderId: "YOUR_SENDER",
+appId: "YOUR_APP"
 }
 
 const app = initializeApp(firebaseConfig)
 const auth = getAuth(app)
 const db = getFirestore(app)
 
-let currentUser = null
+let currentUser=null
+let editingId=null
+let editingType=null
 
 window.showPage=function(page){
 document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"))
@@ -153,45 +159,49 @@ document.getElementById(page).classList.add("active")
 }
 
 window.register=async function(){
-let email=document.getElementById("email").value
-let pass=document.getElementById("password").value
+let email=email.value
+let pass=password.value
 try{
 await createUserWithEmailAndPassword(auth,email,pass)
 loginMsg.innerText="Register berhasil"
-}catch(e){
-loginMsg.innerText=e.message
-}
+}catch(e){loginMsg.innerText=e.message}
 }
 
 window.login=async function(){
-let email=document.getElementById("email").value
-let pass=document.getElementById("password").value
 try{
-await signInWithEmailAndPassword(auth,email,pass)
+await signInWithEmailAndPassword(auth,email.value,password.value)
 loginMsg.innerText="Login berhasil"
-}catch(e){
-loginMsg.innerText=e.message
-}
+}catch(e){loginMsg.innerText=e.message}
 }
 
-window.logout=function(){
-signOut(auth)
-}
+window.logout=function(){signOut(auth)}
 
-onAuthStateChanged(auth,user=>{
-currentUser=user
-})
+onAuthStateChanged(auth,user=>{currentUser=user})
 
 window.uploadItem=async function(){
-if(!currentUser){
-alert("Login dulu")
-return
-}
 
-let type=document.getElementById("uploadType").value
-let name=document.getElementById("itemName").value
-let link=document.getElementById("itemLink").value
-let code=document.getElementById("itemCode").value
+if(!currentUser){alert("Login dulu");return}
+
+let type=uploadType.value
+let name=itemName.value
+let link=itemLink.value
+let code=itemCode.value
+
+if(editingId){
+
+await updateDoc(doc(db,type+"s",editingId),{
+name,
+link,
+code
+})
+
+editingId=null
+editingType=null
+uploadTitle.innerText="Upload"
+uploadBtn.innerText="Upload"
+cancelEditBtn.style.display="none"
+
+}else{
 
 await addDoc(collection(db,type+"s"),{
 name,
@@ -201,52 +211,73 @@ user:currentUser.email,
 views:0
 })
 
+}
+
+itemName.value=""
+itemLink.value=""
+itemCode.value=""
+
 loadItems()
 }
 
-window.playGame = async function(id,link){
+window.cancelEdit=function(){
+editingId=null
+editingType=null
+uploadTitle.innerText="Upload"
+uploadBtn.innerText="Upload"
+cancelEditBtn.style.display="none"
+itemName.value=""
+itemLink.value=""
+itemCode.value=""
+}
 
-if(!currentUser){
-alert("Login dulu")
+window.editItem=function(id,type,data){
+
+if(!currentUser || currentUser.email!==data.user){
+alert("Bukan punya kamu")
 return
 }
 
-let viewRef = doc(db,"views",id+"_"+currentUser.uid)
-let viewSnap = await getDoc(viewRef)
+editingId=id
+editingType=type
 
-if(!viewSnap.exists()){
-await setDoc(viewRef,{
-itemId:id,
-userId:currentUser.uid
-})
+uploadType.value=type
+itemName.value=data.name
+itemLink.value=data.link
+itemCode.value=data.code
 
-await updateDoc(doc(db,"games",id),{
-views: increment(1)
-})
+uploadTitle.innerText="Edit Item"
+uploadBtn.innerText="Save Edit"
+cancelEditBtn.style.display="inline-block"
+
+showPage("upload")
+}
+
+window.playGame=async function(id,link){
+
+if(!currentUser){alert("Login dulu");return}
+
+let viewRef=doc(db,"views",id+"_"+currentUser.uid)
+let snap=await getDoc(viewRef)
+
+if(!snap.exists()){
+await setDoc(viewRef,{itemId:id,userId:currentUser.uid})
+await updateDoc(doc(db,"games",id),{views:increment(1)})
 }
 
 window.open(link,"_blank")
 }
 
-window.copyScript = async function(id,code){
+window.copyScript=async function(id,code){
 
-if(!currentUser){
-alert("Login dulu")
-return
-}
+if(!currentUser){alert("Login dulu");return}
 
-let viewRef = doc(db,"views",id+"_"+currentUser.uid)
-let viewSnap = await getDoc(viewRef)
+let viewRef=doc(db,"views",id+"_"+currentUser.uid)
+let snap=await getDoc(viewRef)
 
-if(!viewSnap.exists()){
-await setDoc(viewRef,{
-itemId:id,
-userId:currentUser.uid
-})
-
-await updateDoc(doc(db,"scripts",id),{
-views: increment(1)
-})
+if(!snap.exists()){
+await setDoc(viewRef,{itemId:id,userId:currentUser.uid})
+await updateDoc(doc(db,"scripts",id),{views:increment(1)})
 }
 
 navigator.clipboard.writeText(code)
@@ -255,16 +286,18 @@ alert("Script dicopy")
 
 async function loadItems(){
 
-let gameList=document.getElementById("gameList")
 gameList.innerHTML=""
-
 let gameSnap=await getDocs(collection(db,"games"))
 
 gameSnap.forEach(d=>{
 let g=d.data()
 let id=d.id
+if(!g.views){g.views=0}
 
-if(!g.views){ g.views=0 }
+let editBtn=""
+if(currentUser && currentUser.email===g.user){
+editBtn=`<button onclick='editItem("${id}","game",${JSON.stringify(g)})'>Edit</button>`
+}
 
 let card=document.createElement("div")
 card.className="card"
@@ -272,20 +305,23 @@ card.innerHTML=`
 <h3>${g.name}</h3>
 <p>👁 ${g.views}</p>
 <button onclick="playGame('${id}','${g.link}')">Play</button>
+${editBtn}
 `
 gameList.appendChild(card)
 })
 
-let scriptList=document.getElementById("scriptList")
 scriptList.innerHTML=""
-
 let scriptSnap=await getDocs(collection(db,"scripts"))
 
 scriptSnap.forEach(d=>{
 let s=d.data()
 let id=d.id
+if(!s.views){s.views=0}
 
-if(!s.views){ s.views=0 }
+let editBtn=""
+if(currentUser && currentUser.email===s.user){
+editBtn=`<button onclick='editItem("${id}","script",${JSON.stringify(s)})'>Edit</button>`
+}
 
 let card=document.createElement("div")
 card.className="card"
@@ -294,6 +330,7 @@ card.innerHTML=`
 <p>👁 ${s.views}</p>
 <pre>${s.code}</pre>
 <button onclick="copyScript('${id}',\`${s.code}\`)">Copy</button>
+${editBtn}
 `
 scriptList.appendChild(card)
 })
