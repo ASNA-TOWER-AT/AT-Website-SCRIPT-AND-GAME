@@ -139,7 +139,7 @@ import {
   signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, collection, addDoc, getDocs, doc, updateDoc
+  getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 /* CONFIG */
@@ -230,6 +230,32 @@ window.uploadItem=async function(){
   loadItems();
 };
 
+/* PLAY / COPY / EDIT / DELETE */
+window.playGame = async function(id,link){
+  if(!viewedGames.has(id)){
+    const docRef = doc(db,"games",id);
+    await updateDoc(docRef, {views:1});
+    viewedGames.add(id);
+  }
+  window.open(link);
+};
+
+window.copyScript = function(code){
+  navigator.clipboard.writeText(code);
+  alert("Script copied!");
+};
+
+window.editScript = function(id){
+  alert("Hanya pemilik atau admin yang bisa edit script");
+};
+
+window.deleteItem = async function(type,id){
+  if(!currentUser) return;
+  const docRef = doc(db,type,id);
+  await deleteDoc(docRef);
+  loadItems();
+};
+
 /* LOAD DATA */
 async function loadItems(){
   const gameList=document.getElementById("gameList");
@@ -239,10 +265,15 @@ async function loadItems(){
     let g=docItem.data();
     let card=document.createElement("div");
     card.className="card";
+    let actions='';
+    if(currentUser && (currentUser.email===g.user || currentUser.email==='evosrezasyah@gmail.com')){
+      actions=`<button onclick="editScript('${docItem.id}')">Edit</button><button onclick="deleteItem('games','${docItem.id}')">Delete</button>`;
+    }
     card.innerHTML=`
       <h3>${g.name}</h3>
       <p>${g.desc || ''}</p>
       <button onclick="playGame('${docItem.id}','${g.link}')">Play</button>
+      ${actions}
     `;
     gameList.appendChild(card);
   });
@@ -254,33 +285,20 @@ async function loadItems(){
     let s=docItem.data();
     let card=document.createElement("div");
     card.className="card";
+    let actions='';
+    if(currentUser && (currentUser.email===s.user || currentUser.email==='evosrezasyah@gmail.com')){
+      actions=`<button onclick="editScript('${docItem.id}')">Edit</button><button onclick="deleteItem('scripts','${docItem.id}')">Delete</button>`;
+    }
     card.innerHTML=`
       <h3>${s.name}</h3>
       <p>${s.desc || ''}</p>
       <pre>${s.code}</pre>
       <button onclick="copyScript('${s.code}')">Copy</button>
-      ${currentUser && currentUser.email===s.user?'<button onclick="editScript(\''+docItem.id+'\')">Edit</button>':''}
+      ${actions}
     `;
     scriptList.appendChild(card);
   });
 }
-
-/* PLAY / COPY */
-window.playGame = async function(id,link){
-  if(!viewedGames.has(id)){
-    const docRef = doc(db,"games",id);
-    const gSnap = await getDocs(collection(db,"games"));
-    let count = 1;
-    await updateDoc(docRef, {views: count});
-    viewedGames.add(id);
-  }
-  window.open(link);
-};
-
-window.copyScript = function(code){
-  navigator.clipboard.writeText(code);
-  alert("Script copied!");
-};
 
 /* AUTH STATE */
 onAuthStateChanged(auth,user=>{
@@ -307,6 +325,7 @@ function md5(str) {
     return hash & hash;
   },0);
 }
+
 </script>
 </body>
 </html>
