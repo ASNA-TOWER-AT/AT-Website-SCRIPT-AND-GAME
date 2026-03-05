@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AT Script Hub V.2.0.0</title>
+<title>AT Script Hub V.5.0.0</title>
 
 <style>
 body{
@@ -95,7 +95,6 @@ button{
   <button id="loginBtn" onclick="showPage('login')">Login</button>
 </nav>
 
-<!-- LOGIN -->
 <div id="login" class="page">
   <h2>Login / Register</h2>
   <input id="email" placeholder="Email">
@@ -105,19 +104,16 @@ button{
   <p id="loginMsg"></p>
 </div>
 
-<!-- GAMES -->
 <div id="games" class="page active">
   <h2>Games</h2>
   <div id="gameList" class="grid"></div>
 </div>
 
-<!-- SCRIPTS -->
 <div id="scripts" class="page">
   <h2>Scripts</h2>
   <div id="scriptList" class="grid"></div>
 </div>
 
-<!-- UPLOAD -->
 <div id="upload" class="page">
   <h2>Upload</h2>
   <select id="uploadType" onchange="updateUploadFields()">
@@ -139,10 +135,9 @@ import {
   signOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
-  getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc
+  getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyBZPDqoF3pqPvVXVigbfBlolHAakohx_VY",
   authDomain: "at-data-174bc.firebaseapp.com",
@@ -153,7 +148,6 @@ const firebaseConfig = {
   measurementId: "G-8PYQB40E2B"
 };
 
-/* INIT */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -161,13 +155,11 @@ const db = getFirestore(app);
 let currentUser = null;
 let viewedGames = new Set();
 
-/* PAGE */
 window.showPage=function(page){
   document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
   document.getElementById(page).classList.add("active");
 };
 
-/* AUTH */
 window.register = async function(){
   let email = document.getElementById("email").value;
   let pass = document.getElementById("password").value;
@@ -194,7 +186,6 @@ window.logout = function(){
   signOut(auth);
 };
 
-/* Update upload fields */
 window.updateUploadFields = function(){
   const type = document.getElementById("uploadType").value;
   if(type === 'game'){
@@ -206,7 +197,6 @@ window.updateUploadFields = function(){
   }
 };
 
-/* UPLOAD */
 window.uploadItem=async function(){
   if(!currentUser){
     alert("Login dulu");
@@ -230,7 +220,6 @@ window.uploadItem=async function(){
   loadItems();
 };
 
-/* PLAY / COPY / EDIT / DELETE */
 window.playGame = async function(id,link){
   if(!viewedGames.has(id)){
     const docRef = doc(db,"games",id);
@@ -249,14 +238,26 @@ window.editScript = function(id){
   alert("Hanya pemilik atau admin yang bisa edit script");
 };
 
+/* DELETE AMAN */
 window.deleteItem = async function(type,id){
   if(!currentUser) return;
+
   const docRef = doc(db,type,id);
+  const snap = await getDoc(docRef);
+
+  if(!snap.exists()) return;
+
+  const data = snap.data();
+
+  if(currentUser.email !== data.user && currentUser.email !== "evosrezasyah@gmail.com"){
+    alert("Kamu tidak punya izin untuk menghapus ini!");
+    return;
+  }
+
   await deleteDoc(docRef);
   loadItems();
 };
 
-/* LOAD DATA */
 async function loadItems(){
   const gameList=document.getElementById("gameList");
   gameList.innerHTML="";
@@ -300,7 +301,6 @@ async function loadItems(){
   });
 }
 
-/* AUTH STATE */
 onAuthStateChanged(auth,user=>{
   currentUser=user;
   if(user){
@@ -318,7 +318,6 @@ onAuthStateChanged(auth,user=>{
 
 loadItems();
 
-/* Minimal MD5 for gravatar */
 function md5(str) {
   return str.split('').reduce((hash,char)=> {
     hash=((hash<<5)-hash)+char.charCodeAt(0);
